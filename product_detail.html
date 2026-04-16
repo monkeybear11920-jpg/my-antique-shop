@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>商品詳情 | 古董專賣店</title>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> 
+	<link rel="stylesheet" href="style.css">
+	<style>
+        /* 詳情頁佈局 */
+        .detail-container { 
+			display: flex; 
+			gap: 40px; 
+			background: white; 
+			padding: 40px; 
+			border-radius: 20px; 
+			box-shadow: 0 10px 20px rgba(0,0,0,0.05); 
+		}
+        
+		.detail-img { flex: 1; border-radius: 15px; overflow: hidden; }
+        .detail-img > img { width: 100%; height: auto; }
+        .detail-content { flex: 1; }
+        .price { font-size: 1.5rem; font-weight: bold; color: var(--primary-color); }
+		
+		/* 主圖容器 */
+		.main-img-container {
+			width: 100%;
+			height: 400px;
+			overflow: hidden;
+			border-radius: 15px;
+			background: #f9f9f9
+		}
+
+		.main-img-container img {
+			width: 100%;
+			height: 100%;
+			object-fit: cover;
+			transition: opacity 0.3s ease; /* 切換時的淡入效果 */
+		}
+
+		/* 縮圖列表容器：確保不會換行，且有間距 */
+		.thumb-list {
+			display: flex;
+			gap: 12px;
+			margin-top: 15px;
+			overflow-x: auto; /* 如果圖片太多可以橫向捲動 */
+			padding-bottom: 5px;
+		}
+
+		/* 縮圖小方塊：關鍵在於固定寬高 */
+		.thumb-item {
+			width: 70px;  /* 你可以調整這個數值，例如 50px 或 70px */
+			height: 70px; /* 寬高一樣才會是正方形 */
+			border-radius: 8px;
+			cursor: pointer;
+			border: 2px solid transparent;
+    
+			/* 核心：確保圖片在小方塊內不變形 */
+			object-fit: cover; 
+			flex-shrink: 0; /* 防止圖片被壓縮變形 */
+			transition: 0.2s;
+		}
+
+		/* 選中時的高亮效果 */
+		.thumb-item.active {
+			border-color: var(--primary-color);
+			transform: scale(1.05); /* 選中時稍微放大一點點 */
+		}
+		.thumb-item:hover {opacity: 0.8;}	
+		
+		.detail-desc {
+			line-height: 1.8;
+			color: #666;
+			/* 關鍵屬性：保留換行 */
+			white-space: pre-line; 
+			/* 稍微增加段落間距，看起來更舒服 */
+			margin: 20px 0;
+		}
+}
+    </style>
+</head>
+<body>
+    <header id="common-header"></header>
+
+	<main class="container">
+        <div id="product-detail" class="detail-container"></div>
+    </main>
+
+    <div id="common-modal"></div>
+	<div id="common-footer"></div>
+
+    <script src="data.js"></script>
+    <script src="components.js"></script> 
+	<script src="main.js"></script>
+	
+	<script>
+		// --- 資料初始化 ---
+		// 1. 取得網址的 ID
+		const urlParams = new URLSearchParams(window.location.search);
+		const productId = urlParams.get('id');
+		// 2. 從共用的 products 陣列找資料
+		const product = products.find(p => p.id === productId);
+		// 3. 渲染畫面
+		const detailDiv = document.getElementById("product-detail");
+		
+		// 輪播狀態變數
+		let currentImgIndex = 0;
+		let autoPlayTimer = null;
+		let productImages = [];
+		
+		// --- 渲染邏輯 ---
+		if (product) {
+        // 確保有圖片陣列，若 data.js 只有單張 img 則轉為陣列
+			productImages = product.images || [product.img];
+
+			detailDiv.innerHTML = `
+				<div class="detail-img">
+					<div class="main-img-container" id="main-container">
+						<img id="main-photo" src="${productImages[0]}" alt="${product.name}">
+					</div>
+					<div class="thumb-list">
+						${productImages.map((img, index) => `
+							<img src="${img}" 
+								class="thumb-item ${index === 0 ? 'active' : ''}" 
+								onclick="changePhoto(${index})" 
+								data-index="${index}">
+						`).join('')}
+					</div>
+				</div>
+            
+				<div class="detail-content">
+					<h1>${product.name}</h1>
+					<p class="price">NT$ ${product.price.toLocaleString()}</p>
+					<hr>
+					<p class="detail-desc">${product.desc}</p>
+                
+					<div class="quantity-selector">
+						<span class="qty-label">數量：</span>
+						<input type="number" id="qty-${product.id}" value="1" min="1" max="99">					
+					</div>
+					<button class="btn-add" onclick="addToCartWithQty('${product.id}')">加入購物車</button>
+				</div>`;
+
+			// 渲染完畢後啟動進階功能
+			initPhotoGallery();
+		} else {
+			detailDiv.innerHTML = "<h2>找不到該商品資訊。</h2>";
+		}
+
+		// --- 圖片輪播功能 ---
+
+		function initPhotoGallery() {       
+			const mainContainer = document.getElementById('main-container');
+			if (!mainContainer) return;
+
+			// 1. 滾輪切換
+			mainContainer.addEventListener('wheel', handleWheel, { passive: false });
+
+			// 2. 暫停功能：滑鼠移入停止計時，移出恢復計時
+			mainContainer.addEventListener('mouseenter', () => {
+				clearInterval(autoPlayTimer);
+				console.log("Paused"); // 除錯用
+			});
+        
+			mainContainer.addEventListener('mouseleave', () => {
+				startAutoPlay();
+				console.log("Resumed");
+			});
+
+			// 3. 啟動自動播放
+			startAutoPlay();
+		}
+
+		// A. 切換照片
+		window.changePhoto = function(index) {
+			currentImgIndex = index;
+			const mainPhoto = document.getElementById('main-photo');
+			if (!mainPhoto) return;
+
+			// 切換動畫：淡出再淡入
+			mainPhoto.style.opacity = '0.5';
+        
+			setTimeout(() => {
+				mainPhoto.src = productImages[currentImgIndex];
+				mainPhoto.style.opacity = '1';
+			}, 150);
+
+			// 更新縮圖高亮
+			document.querySelectorAll('.thumb-item').forEach((thumb, i) => {
+				thumb.classList.toggle('active', i === currentImgIndex);
+			});
+		};
+
+		// B. 處理滾輪邏輯
+		function handleWheel(e) {
+			e.preventDefault(); // 禁止網頁捲動
+			if (e.deltaY > 0) {
+				// 向下滾 -> 下一張
+				currentImgIndex = (currentImgIndex + 1) % productImages.length;
+			} else {
+				// 向上滾 -> 上一張
+				currentImgIndex = (currentImgIndex - 1 + productImages.length) % productImages.length;
+			}
+			changePhoto(currentImgIndex);
+		}
+
+		// C. 自動播放控制
+		function startAutoPlay() {
+			if (productImages.length <= 1) return; // 只有一張圖就不播
+			autoPlayTimer = setInterval(() => {
+				currentImgIndex = (currentImgIndex + 1) % productImages.length;
+				changePhoto(currentImgIndex);
+			}, 3000); // 3秒換一次
+		}
+
+		// 初始化購物車數字
+		updateSummary();
+	</script>
+</body>
+</html>

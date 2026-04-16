@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>關於我們 - 河馬博古幽思</title>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> 
+	<link rel="stylesheet" href="style.css">
+	<style>
+		.about-container {
+			max-width: 1000px;
+			margin: 40px auto;
+			padding: 0 20px;
+		}
+
+		.about-hero {
+			text-align: center;
+			padding: 60px 0;
+			background-color: #f9f7f2; /* 淡淡的古風米色 */
+			border-radius: 8px;
+			margin-bottom: 40px;
+		}
+
+		.about-hero h1 {
+			font-size: 2.5rem;
+			color: var(--primary-color);
+			margin-bottom: 10px;
+		}
+
+		.subtitle {
+			color: #888;
+			font-style: italic;
+			margin-bottom: 30px;
+		}
+
+		.about-text {
+			max-width: 700px;
+			margin: 0 auto;
+			line-height: 2;
+			color: #444;
+		}
+
+		/* 聯絡地圖網格 */
+		.about-contact-grid {
+			display: grid;
+			grid-template-columns: 1fr 1fr;
+			gap: 30px;
+			margin-top: 50px;
+		}
+
+		.contact-card {
+			background: white;
+			padding: 30px;
+			border: 1px solid #eee;
+			box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+		}
+
+		.contact-list {
+			list-style: none;
+			padding: 0;
+			margin-top: 20px;
+		}
+
+		.contact-list li {
+			margin-bottom: 15px;
+			font-size: 1.1rem;
+			color: #555;
+		}
+
+		.contact-list i {
+			color: var(--primary-color);
+			width: 25px;
+		}
+
+		.map-box {
+			min-height: 350px;
+			border-radius: 8px;
+			overflow: hidden;
+			border: 1px solid #ddd;
+		}
+
+		/* 手機版適配 */
+		@media (max-width: 768px) {
+			.about-contact-grid {
+				grid-template-columns: 1fr;
+			}
+		}
+	</style>
+</head>
+<body>
+
+    <header id="common-header"></header>
+
+    <main class="about-container">
+        <section class="about-hero">
+            <h1>關於河馬博古幽思</h1>
+            <p class="subtitle">傳承千年美學，連結古今知音</p>
+            <div class="about-text">
+                <p>我們致力於蒐羅具有歷史價值的古董器物，從清幽的茶具到深邃的畫作，每件珍藏都承載著一段時光的故事。</p>
+                <p>在這裡，古董不只是裝飾，而是一種生活態度的延續。</p>
+            </div>
+        </section>
+
+        <section class="about-contact-grid">
+            <div class="contact-card" id="about-info">
+                </div>
+
+            <div class="map-box">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1074.5008584161274!2d121.61655653225382!3d25.062034041114618!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3442aca5fb173f91%3A0xe87c7f8be9798553!2z5rC05bK46ZuZ5pif56S-5Y2A!5e0!3m2!1szh-TW!2stw!4v1776318584013!5m2!1szh-TW!2stw" 
+                    width="100%" height="100%" style="border:0;" 
+                    allowfullscreen="" loading="lazy">
+                </iframe>
+            </div>
+        </section>
+    </main>
+
+    <div id="common-footer"></div>
+
+    <script src="data.js"></script>
+    <script src="components.js"></script>
+    <script src="main.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // 確保 About 頁面的資訊也同步
+            const infoDiv = document.getElementById('about-info');
+            if (infoDiv && typeof SHOP_INFO !== 'undefined') {
+                infoDiv.innerHTML = `
+                    <h2>聯絡我們</h2>
+                    <ul class="contact-list">
+                        <li><i class="fa-solid fa-house-chimney"></i> <strong>店名：</strong> ${SHOP_INFO.name}</li>
+                        <li><i class="fa-solid fa-phone"></i> <strong>電話：</strong> ${SHOP_INFO.tel}</li>
+                        <li><i class="fa-solid fa-location-dot"></i> <strong>地址：</strong> ${SHOP_INFO.address}</li>
+                        <li><i class="fa-solid fa-clock"></i> <strong>營業：</strong> ${SHOP_INFO.hours}</li>
+                    </ul>
+                `;
+            }
+        });
+    </script>
+</body>
+</html>
