@@ -7,7 +7,7 @@ const SHOP_INFO = {
 };
 
 const NAV_MENU = [
-    { id: 'all', name: '首頁', link: 'shop_main.html' },
+    { id: 'all', name: '首頁', link: 'index.html' },
     { 
         id: 'tea', 
         name: '茶類', 

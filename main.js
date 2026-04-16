@@ -54,7 +54,7 @@ function filterProducts(category) {
 	
 	if (!isHomePage) {
         // 不在首頁就跳轉
-        window.location.href = `shop_main.html?category=${category}`;
+        window.location.href = `index.html?category=${category}`;
         return;
     }
 	
@@ -253,7 +253,7 @@ function handleSearch(event) {
         renderProductsByKeyword(query);
     } else if (event.key === 'Enter') {
         // 如果在分頁按 Enter，跳回首頁並帶參數
-        window.location.href = `shop_main.html?search=${encodeURIComponent(query)}`;
+        window.location.href = `index.html?search=${encodeURIComponent(query)}`;
     }
 }
 

@@ -1,0 +1,357 @@
+:root {
+	--primary-color: #8b4513;
+	--accent-color: #8B4513;
+	--bg-color: #f4f1ea;
+	--text-color: #332b2b;
+	--danger-color: #ff4d4d;
+	--panel-bg: #ffffff;
+}
+
+#common-header {
+    display: contents; /* 這會讓 header 像透明一樣，讓內部的 nav 直接對應 body 固定 */
+}
+
+body {
+	font-family: 'Noto Serif TC', serif;
+	background-color: var(--bg-color);
+	color: var(--text-color);
+	margin: 0;
+	padding-bottom: 50px;
+}
+
+/* 導覽列：使用 Sticky 固定在頂部 */
+#common-header nav{
+	background: white;
+	padding: 0 8%;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+	position: sticky;
+	top: 0;
+	z-index: 1001; /* 確保在最上層 */
+	height: 70px; /* 固定高度比較好計算 */
+	box-sizing: border-box;
+}
+
+.logo { 
+	font-size: 1.5rem !important; 
+	font-weight: bold; 
+	color: var(--primary-color);
+	white-space: nowrap; /* 防止文字換行導致視覺變形 */
+    display: flex;
+    align-items: center;
+}
+
+.logo i {
+    margin-right: 10px; /* 調整圖示與文字間距 */
+    font-size: 1.8rem;   /* 確保圖示大小也一致 */
+}
+
+.cart-status {
+	background: var(--primary-color);
+	color: white;
+	padding: 8px 25px;
+	border-radius: 30px;
+	cursor: pointer;
+	font-weight: bold;
+	transition: 0.3s;
+	white-space: nowrap;
+}
+.cart-status:hover { opacity: 0.9; transform: scale(1.05); }
+
+/* 導覽列基礎 */
+.category-wrapper {
+    background: #fff;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 70px;
+    z-index: 1000;
+}
+
+/* 設定統一的網格寬度與欄位 */
+.nav-bar-container, .mega-grid {
+    max-width: 1000px; /* 根據你的內容調整總寬度 */
+    margin: 0 auto;
+    display: grid;
+    /* 這裡的列數必須等於 NAV_MENU 的長度 (範例是 5 欄) */
+    grid-template-columns: repeat(5, 1fr); 
+}
+
+.main-nav {
+    grid-column: 1 / -1; /* 讓 ul 撐滿網格 */
+    display: grid;
+    grid-template-columns: inherit; /* 繼承父層的 5 欄設定 */
+    list-style: none;
+    padding: 15px 0;
+    margin: 0;
+}
+
+.nav-item {
+    text-align: center;
+}
+
+.nav-item a {
+    text-decoration: none;
+    color: #333;
+    font-weight: bold;
+    /*display: block;*/
+	font-size: 1.1rem;
+    transition: 0.3s;
+}
+.nav-item a:hover {color: var(--primary-color);}
+
+/* 展開面板 */
+.mega-menu-panel {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    width: 100%;
+    background: white;
+    box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    max-height: 0; /* 預設高度為 0 */
+    overflow: hidden;
+    transition: max-height 0.4s ease, opacity 0.3s;
+    opacity: 0;
+    border-top: 0px solid #eee;
+}
+
+/* 滑鼠移入 category-wrapper 時展開 */
+.category-wrapper:hover .mega-menu-panel {
+    max-height: 300px; /* 設定一個足夠大的高度 */
+    opacity: 1;
+    border-top: 1px solid #eee;
+}
+
+/* 分類列表對齊 */
+.mega-column {
+    padding: 20px 0;
+    text-align: center; /* 讓子選單文字也置中對齊 */
+}
+
+.mega-sub-list {
+    list-style: none; /* 移除點標記 */
+    padding: 0;
+    margin: 0;
+}
+
+.mega-sub-list li {
+    padding: 10px;
+    cursor: pointer;
+    color: #666;
+    transition: 0.2s;
+}
+
+/* 鼠標選到列表時的 Mark 效果 */
+.mega-sub-list li:hover {
+    background-color: var(--primary-color);
+    color: white !important;
+    border-radius: 4px;
+}
+
+.container { max-width: 1200px; margin: 40px auto; padding: 0 20px; }
+
+.qty-label {
+	font-family: 'Noto Serif TC', serif;
+    font-weight: bold;
+    color: var(--text-color);
+    margin-right: 8px;
+}
+
+.quantity-selector {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	gap: 0;  /* 讓按鈕與輸入框連在一起 */
+	margin-bottom: 15px;
+}
+
+.quantity-selector input {
+	width: 45px;
+	height: 32px;
+	border: 1px solid #ddd;
+	text-align: center;
+	font-size: 1rem;
+	border-left: none;
+	border-right: none;
+}
+
+.qty-btn {
+	background: #fff;
+	border: 1px solid #ddd;
+	width: 32px;
+	height: 34px;
+	cursor: pointer;
+	font-weight: bold;
+	transition: 0.2s;
+}
+.qty-btn:hover { background: #f5f5f5; }
+
+.btn-add {
+	background: var(--primary-color);
+	color: white;
+	border: none;
+	padding: 10px 25px;
+	border-radius: 5px;
+	cursor: pointer;
+	width: 100%;
+	font-weight: bold;
+}
+
+/* 結帳視窗彈窗 */
+.modal-overlay {
+	position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+	background: rgba(0,0,0,0.6); backdrop-filter: blur(5px);
+	display: none; /* JS 切換此項 */
+	justify-content: center; align-items: center; z-index: 2000;
+}
+/* 當有 active 類別時顯示 */
+.modal-overlay.active { display: flex; }
+
+.modal-content {
+	background: white; padding: 40px; border-radius: 20px;
+	width: 90%; max-width: 500px; position: relative;
+	max-height: 80vh; overflow-y: auto;
+}
+
+.cart-item {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	padding: 15px 0;
+	border-bottom: 1px solid #eee;
+}
+
+.btn-remove {
+	background: none;
+	border: none;
+	color: var(--danger-color); /* 紅色提示 */
+	font-size: 1.1rem;
+	cursor: pointer;
+	margin-left: 10px;
+	transition: 0.2s;
+}
+.btn-remove:hover {
+	color: #cc0000;
+	transform: scale(1.2); /* 滑鼠移上去稍微放大 */
+}
+
+.btn-pay {
+	width: 100%; background: var(--accent-color); color: white;
+	border: none; padding: 15px; border-radius: 10px; font-size: 1.1rem; cursor: pointer;
+	font-weight: bold; margin-top: 20px;
+}
+
+.btn-close { position: absolute; top: 15px; right: 20px; font-size: 1.8rem; cursor: pointer; color: #999; }
+
+.quantity-control {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	background: #f5f5f5;
+	padding: 5px 10px;
+	border-radius: 8px;
+}
+
+.nav-right-group {
+    display: flex;
+    align-items: center;
+    gap: 20px; /* 搜尋框與購物車的間距 */
+}
+
+.search-container {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.search-container input {
+    padding: 8px 35px 8px 15px;
+    border: 1px solid #ddd;
+    border-radius: 20px;
+    outline: none;
+    font-family: 'Noto Serif TC', serif;
+    transition: 0.3s;
+    width: 150px; /* 平時寬度 */
+}
+
+.search-container input:focus {
+    width: 220px; /* 點擊時伸長 */
+    border-color: var(--primary-color);
+}
+
+.search-container i {
+    position: absolute;
+    right: 12px;
+    color: #999;
+    pointer-events: none;
+}
+
+/* 頁尾樣式 */
+.footer-container {
+    background-color: #333; /* 深色背景 */
+    color: #fff;
+    padding: 40px 0 20px;
+    margin-top: 50px;
+}
+
+.footer-content {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 30px;
+    padding: 0 20px;
+}
+
+.footer-section h4 {
+    border-bottom: 2px solid var(--primary-color);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+.footer-section p {
+    font-size: 0.9rem;
+    line-height: 1.8;
+    color: #ccc;
+}
+
+.footer-bottom {
+    text-align: center;
+    padding-top: 30px;
+    border-top: 1px solid #444;
+    margin-top: 30px;
+    font-size: 0.8rem;
+    color: #888;
+}
+
+/* 聊天室專用 CSS */
+#chat-button {
+    position: fixed; bottom: 30px; right: 30px;
+    background: #8b4513; color: white;
+    width: 60px; height: 60px; border-radius: 50%;
+    display: flex; justify-content: center; align-items: center;
+    cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    z-index: 9999; font-size: 1.5rem;
+}
+
+.chat-window {
+    position: fixed; bottom: 100px; right: 30px;
+    width: 320px; height: 450px; background: white;
+    border-radius: 15px; box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+    display: none; flex-direction: column; overflow: hidden;
+    z-index: 9999;
+}
+.chat-window.active { display: flex; }
+
+.chat-header { background: #8b4513; color: white; padding: 15px; display: flex; justify-content: space-between; align-items: center; }
+.chat-header button { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
+
+.chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f9f9f9; }
+.msg { padding: 10px; border-radius: 10px; max-width: 85%; font-size: 0.95rem; line-height: 1.4; }
+.msg.bot { background: #eee; align-self: flex-start; color: #333; }
+.msg.user { background: #e2d5c5; align-self: flex-end; color: #333; }
+
+.chat-input-area { display: flex; padding: 12px; border-top: 1px solid #eee; background: white; }
+.chat-input-area input { flex: 1; border: none; outline: none; padding: 5px; font-size: 1rem; }
+.chat-input-area button { background: none; border: none; color: #8b4513; cursor: pointer; font-size: 1.2rem; }

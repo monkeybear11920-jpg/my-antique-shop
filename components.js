@@ -6,7 +6,7 @@ const components = {
 
         header.innerHTML = `
         <nav>
-            <div class="logo" onclick="location.href='shop_main.html'" style="cursor:pointer;">
+            <div class="logo" onclick="location.href='index.html'" style="cursor:pointer;">
                 <i class="fa-solid fa-hippo"></i> 古董專賣店
             </div>
 			
