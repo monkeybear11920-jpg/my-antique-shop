@@ -355,12 +355,13 @@ function setActiveButton(category) {
     });
 }
 
+
 // --- 聊天室功能 ---
 function toggleChat() {
     const win = document.getElementById('chat-window');
     if (win) win.classList.toggle('active');
 }
-
+/*
 function sendMsg() {
     const input = document.getElementById('chat-input');
     const msgArea = document.getElementById('chat-messages');
@@ -390,3 +391,26 @@ window.adminReply = function(text) {
         </div>`;
     msgArea.scrollTop = msgArea.scrollHeight;
 }
+*/
+
+// 連接到後端伺服器
+const socket = io();
+
+function sendMsg() {
+    const input = document.getElementById('chat-input');
+    if (!input || !input.value.trim()) return;
+
+    // 1. 不再自己畫訊息，而是發送給後端
+    socket.emit('chat message', input.value);
+    
+    input.value = '';
+}
+
+// 2. 監聽後端傳回來的「所有人訊息」
+socket.on('chat message', function(data) {
+    const msgArea = document.getElementById('chat-messages');
+    if (msgArea) {
+        msgArea.innerHTML += `<div class="msg user"><b>訪客:</b> ${data.text} <small>${data.time}</small></div>`;
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }
+});
