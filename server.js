@@ -18,23 +18,32 @@ app.use(express.static(path.join(__dirname, '/')));
 
 // 當有人連線進來時
 io.on('connection', (socket) => {
-    console.log('新連線:', socket.id);
+    console.log('連線成功:', socket.id);
 
-    // 監聽客人訊息
+    // 1. 訪客一連線，自動加入以自己 ID 命名的房間
+    socket.join(socket.id);
+
+    // 2. 訪客傳訊息
     socket.on('chat message', (msg) => {
-        // 廣播給所有人，並標記 isAdmin 為 false
-        io.emit('chat message', {
+        // 發送給該房間（訪客自己）以及老闆
+        // 我們把發送者的 ID 帶上，老闆端才知道是誰在說話
+        io.to(socket.id).emit('chat message', {
             text: msg,
+            senderId: socket.id,
             isAdmin: false,
             time: new Date().toLocaleTimeString()
         });
+        
+        // 額外通知老闆：有人發新訊息了（用於老闆端生成分頁標籤）
+        io.emit('new customer', { id: socket.id, msg: msg });
     });
 
-    // 監聽老闆訊息
-    socket.on('admin message', (msg) => {
-        // 廣播給所有人，並標記 isAdmin 為 true
-        io.emit('chat message', {
-            text: msg,
+    // 3. 老闆回覆訊息
+    socket.on('admin message', (data) => {
+        // data 應包含 { targetId: "客人的ID", text: "內容" }
+        io.to(data.targetId).emit('chat message', {
+            text: data.text,
+            senderId: 'admin',
             isAdmin: true,
             time: new Date().toLocaleTimeString()
         });
