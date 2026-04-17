@@ -361,56 +361,33 @@ function toggleChat() {
     const win = document.getElementById('chat-window');
     if (win) win.classList.toggle('active');
 }
-/*
-function sendMsg() {
-    const input = document.getElementById('chat-input');
-    const msgArea = document.getElementById('chat-messages');
-    if (!input || !input.value.trim()) return;
-
-    // 使用者訊息
-    msgArea.innerHTML += `<div class="msg user">${input.value}</div>`;
-    const userText = input.value;
-    input.value = '';
-    msgArea.scrollTop = msgArea.scrollHeight;
-
-    // 模擬機器人回覆
-    setTimeout(() => {
-        let reply = "收到您的訊息，鑑定師將盡快回覆您！";
-        if (userText.includes("價格")) reply = "古董價格依品相而定，歡迎上傳照片。";
-        msgArea.innerHTML += `<div class="msg bot">${reply}</div>`;
-        msgArea.scrollTop = msgArea.scrollHeight;
-    }, 800);
-}
-
-// 讓你在 Console 模擬店家說話，使用F12然後輸入adminReply("訊息內容")
-window.adminReply = function(text) {
-    const msgArea = document.getElementById('chat-messages');
-    msgArea.innerHTML += `
-        <div class="msg bot" style="background:#d4edda; align-self:flex-start;">
-            <strong>[店家回覆]：</strong>${text}
-        </div>`;
-    msgArea.scrollTop = msgArea.scrollHeight;
-}
-*/
 
 // 連接到後端伺服器
 const socket = io();
+let isFirstMsg = true;
 
 function sendMsg() {
     const input = document.getElementById('chat-input');
     if (!input || !input.value.trim()) return;
 
+    const text = input.value;
     // 1. 不再自己畫訊息，而是發送給後端
     socket.emit('chat message', input.value);
-	
-	// 模擬機器人回覆
-    setTimeout(() => {
-        let reply = "收到您的訊息，鑑定師將盡快回覆您！";
-        msgArea.innerHTML += `<div class="msg bot">${reply}</div>`;
-        msgArea.scrollTop = msgArea.scrollHeight;
-    }, 800);
-    
-    input.value = '';
+	input.value = '';
+
+    // 如果是第一則訊息，啟動自動回覆
+    if (isFirstMsg) {
+        setTimeout(() => {
+            // 直接由前端模擬一則 bot 訊息
+            const msgArea = document.getElementById('chat-messages');
+            const autoReply = document.createElement('div');
+            autoReply.className = 'msg bot';
+            autoReply.innerHTML = `收到您的訊息，河馬會盡快回覆您<br><small style="font-size:10px; opacity:0.5;">${new Date().toLocaleTimeString()}</small>`;
+            msgArea.appendChild(autoReply);
+            msgArea.scrollTop = msgArea.scrollHeight;
+        }, 1000); // 1秒後回覆
+        isFirstMsg = false;
+    }
 }
 
 // 2. 監聽後端傳回來的「所有人訊息」
@@ -418,14 +395,16 @@ socket.on('chat message', function(data) {
     const msgArea = document.getElementById('chat-messages');
     if (!msgArea) return;
 
-    // 如果是老闆發的，套用 bot 樣式；如果是客人發的，套用 user 樣式
-    const bubbleClass = data.isAdmin ? 'bot' : 'user';
-    const senderName = data.isAdmin ? '鑑定師回覆' : '訪客';
+    const div = document.createElement('div');
+    // 判斷是誰發的來決定樣式
+    div.className = data.isAdmin ? 'msg bot' : 'msg user';
+    
+    // 只顯示內容與時間，不顯示名稱標籤
+    div.innerHTML = `
+        ${data.text}
+        <br><small style="font-size:10px; opacity:0.5;">${data.time}</small>
+    `;
 
-    msgArea.innerHTML += `
-        <div class="msg ${bubbleClass}">
-            <b>${senderName}:</b> ${data.text}
-            <br><small>${data.time}</small>
-        </div>`;
+    msgArea.appendChild(div);
     msgArea.scrollTop = msgArea.scrollHeight;
 });

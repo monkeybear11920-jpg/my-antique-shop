@@ -7,60 +7,153 @@
 	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> 
     <link rel="stylesheet" href="style.css">
 
-</head>
-<body>
-    <h1>店家回覆系統</h1>
-	<div class="admin-container" style="display: flex;">
-		<div id="customer-list" style="width: 200px; border-right: 1px solid #ccc;">
-			<h3>對話列表</h3>
-			<ul id="user-tabs"></ul>
-		</div>
+	<style>
+        .admin-layout { display: flex; height: calc(100vh - 70px); background: #fdfcf9; }
+        .sidebar { width: 250px; border-right: 1px solid #e0d8c8; background: white; overflow-y: auto; }
+        .customer-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; }
+        .customer-item:hover { background: #f4f1ea; }
+        .customer-item.active { background: #e2d5c5; border-left: 5px solid #8b4513; }
+        .main-chat { flex: 1; display: flex; flex-direction: column; }
+        #admin-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .admin-input-box { padding: 20px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; }
+        .admin-input-box input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+    </style>
 
-		<div id="chat-window" style="flex: 1;">
-			<h3 id="current-user-title">請選擇客人</h3>
-			<div id="chat-messages" style="height: 400px; overflow-y: auto;"></div>
-			<input type="text" id="admin-input">
-			<button onclick="sendToUser()">發送</button>
-		</div>
-	</div>
+</head>
+
+<body>
+    <nav style="background: white; padding: 0 5%; display: flex; align-items: center; height: 70px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
+        <div class="logo"><i class="fa-solid fa-hippo"></i> 古董店管理後台</div>
+    </nav>
+
+    <div class="admin-layout">
+        <div class="sidebar" id="customer-list">
+            <div style="padding: 15px; font-weight: bold; color: #8b4513;">對話列表</div>
+        </div>
+        <div class="main-chat">
+            <div id="admin-messages"></div>
+            <div class="admin-input-box">
+                <input type="text" id="admin-input" placeholder="輸入訊息..." onkeypress="handleAdminKey(event)">
+                <button onclick="sendToCustomer()" style="background:#8b4513; color:white; border:none; padding:10px 20px; border-radius:5px; cursor:pointer;">傳送</button>
+            </div>
+        </div>
+    </div>
 
     <script src="data.js"></script>
     <script src="components.js"></script> 
-	<script src="/socket.io/socket.io.js"></script>
-
+    <script src="/socket.io/socket.io.js"></script>
     <script>
-		let activeCustomerId = null;
-		const customerMessages = {}; // 儲存各個客人的對話紀錄
+        const socket = io();
+        let currentCustomerId = null;
+        const allMessages = {}; // 存儲各別客人的訊息紀錄
 
-		socket.on('new customer', (data) => {
-			if (!customerMessages[data.id]) {
-				customerMessages[data.id] = [];
-				// 動態增加標籤頁按鈕
-				const li = document.createElement('li');
-				li.textContent = "客人 " + data.id.substring(0,5);
-				li.onclick = () => switchUser(data.id);
-				document.getElementById('user-tabs').appendChild(li);
-			}
+		socket.on('new customer message', (data) => {
+    		const id = data.customerId;
+    
+    		// 如果是新客人，初始化他的訊息陣列
+    		if (!allMessages[id]) {
+       			allMessages[id] = [];
+       			addUserTab(id, data.text);
+    		}
+
+    		// 存入訊息紀錄
+    		allMessages[id].push({
+        		text: data.text,
+        		isAdmin: false,
+        		time: data.time
+    		});
+
+			// 側邊欄預覽文字
+        	const preview = document.getElementById(`last-${id}`);
+        	if (preview) preview.textContent = data.text;
+    		
+			// 如果目前正開著這個客人的視窗，就立刻渲染
+    		if (currentCustomerId === id) {
+       			renderMessages();
+    		} else {
+        		// 如果在看別人，就在標籤上顯示紅點（未讀）
+        		const tab = document.getElementById('tab-' + id);
+        		if (tab) {
+           			tab.querySelector('.unread-dot').style.display = 'inline-block';
+        		}
+    		}
 		});
 
+    	function handleAdminKey(event) {
+       	 	if (event.key === 'Enter') {
+          	 	sendToCustomer();
+        	}
+    	}
+
+		function addUserTab(id, initialText) {
+        	const list = document.getElementById('customer-list'); // 確保 ID 與 HTML 對應
+        	const div = document.createElement('div');
+        	div.className = 'customer-item';
+        	div.id = 'tab-' + id;
+        	div.innerHTML = `
+				<div style="position: relative;">
+            		<strong>訪客 ${id.substring(0, 5)}</strong>
+					<span class="unread-dot" style="display:none; width:8px; height:8px; background:red; border-radius:50%; margin-left:5px;"></span>
+                	<br>
+            		<small id="last-${id}" style="color: #888; display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">${initialText}</small>
+				</div>
+			`;
+        	div.onclick = () => switchUser(id);
+        	list.appendChild(div);
+    	}
+
 		function switchUser(id) {
-			activeCustomerId = id;
-			document.getElementById('current-user-title').textContent = "正在與 " + id + " 對話";
+    		console.log("切換到客人:", id); // 除錯用
+    		currentCustomerId = id;
+    
+			document.querySelectorAll('.customer-item').forEach(el => el.classList.remove('active'));
+        	const activeTab = document.getElementById('tab-' + id);
+        	if (activeTab) {
+            	activeTab.classList.add('active');
+            	const dot = activeTab.querySelector('.unread-dot');
+            	if (dot) dot.style.display = 'none';
+        	}
+        	
 			renderMessages();
 		}
 
-		function sendToUser() {
-			const text = document.getElementById('admin-input').value;
-			socket.emit('admin message', { targetId: activeCustomerId, text: text });
-			document.getElementById('admin-input').value = '';
+		function renderMessages() {
+    		const container = document.getElementById('admin-messages');
+    		if (!currentCustomerId || !allMessages[currentCustomerId]) return;
+
+    		container.innerHTML = '';
+    		allMessages[currentCustomerId].forEach(msg => {
+        		const div = document.createElement('div');
+        		// 老闆端：老闆發的在右(user樣式)，客人發的在左(bot樣式)
+        		div.className = msg.isAdmin ? 'msg user' : 'msg bot';
+        		div.style.alignSelf = msg.isAdmin ? 'flex-end' : 'flex-start';
+				div.innerHTML = `${msg.text}<br><small style="font-size:10px; opacity:0.5;">${msg.time}</small>`;
+            	container.appendChild(div);
+    		});
+    		container.scrollTop = container.scrollHeight;
 		}
 
-        socket.on('chat message', (data) => {
-            const msgArea = document.getElementById('chat-messages');
-            const label = data.isAdmin ? '[我]' : '[客人]';
-            msgArea.innerHTML += `<div><b>${label}:</b> ${data.text}</div>`;
-            msgArea.scrollTop = msgArea.scrollHeight;
-        });
+        function sendToCustomer() {
+            const input = document.getElementById('admin-input');
+            if (!currentCustomerId || !input.value.trim()) {
+            	alert("請先選擇一位顧客！");
+            	return;
+        	}
+            
+            const text = input.value;
+
+            socket.emit('admin message', { targetId: currentCustomerId, text: text });
+            
+            // 將老闆回覆存入本地並顯示
+        	allMessages[currentCustomerId].push({
+            	text: text,
+            	isAdmin: true,
+            	time: new Date().toLocaleTimeString()
+        	});
+            
+			renderMessages();
+            input.value = '';
+        }
     </script>
 </body>
 </html>

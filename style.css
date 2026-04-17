@@ -348,11 +348,29 @@ body {
 .chat-header button { background: none; border: none; color: white; font-size: 1.5rem; cursor: pointer; }
 
 .chat-messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; background: #f9f9f9; }
-.msg { padding: 10px; border-radius: 10px; max-width: 85%; font-size: 0.95rem; line-height: 1.4; }
+
+.msg {
+    padding: 10px 15px;
+    max-width: 80%;
+    min-width: 50px; /* 增加最小寬度，避免太短 */
+    font-size: 0.95rem;
+    line-height: 1.5;
+    position: relative;
+    word-wrap: break-word;
+    margin: 5px 0; /* 增加上下間距 */
+}
+
+/* 確保時間縮小一點，並與內容換行 */
+.msg small {
+    display: block;
+    margin-top: 4px;
+    text-align: right; /* 時間靠右對齊 */
+}
+
 /* 訪客自己 (右邊) */
 .msg.user {
     align-self: flex-end;
-    background-color: #ff4d4d;
+    background-color: #f4f1ea;
     border-radius: 10px 0 10px 10px;
     margin-left: 50px;
 }
