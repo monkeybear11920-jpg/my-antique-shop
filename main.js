@@ -402,6 +402,13 @@ function sendMsg() {
 
     // 1. 不再自己畫訊息，而是發送給後端
     socket.emit('chat message', input.value);
+	
+	// 模擬機器人回覆
+    setTimeout(() => {
+        let reply = "收到您的訊息，鑑定師將盡快回覆您！";
+        msgArea.innerHTML += `<div class="msg bot">${reply}</div>`;
+        msgArea.scrollTop = msgArea.scrollHeight;
+    }, 800);
     
     input.value = '';
 }
@@ -409,8 +416,16 @@ function sendMsg() {
 // 2. 監聽後端傳回來的「所有人訊息」
 socket.on('chat message', function(data) {
     const msgArea = document.getElementById('chat-messages');
-    if (msgArea) {
-        msgArea.innerHTML += `<div class="msg user"><b>訪客:</b> ${data.text} <small>${data.time}</small></div>`;
-        msgArea.scrollTop = msgArea.scrollHeight;
-    }
+    if (!msgArea) return;
+
+    // 如果是老闆發的，套用 bot 樣式；如果是客人發的，套用 user 樣式
+    const bubbleClass = data.isAdmin ? 'bot' : 'user';
+    const senderName = data.isAdmin ? '鑑定師回覆' : '訪客';
+
+    msgArea.innerHTML += `
+        <div class="msg ${bubbleClass}">
+            <b>${senderName}:</b> ${data.text}
+            <br><small>${data.time}</small>
+        </div>`;
+    msgArea.scrollTop = msgArea.scrollHeight;
 });

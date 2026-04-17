@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>古董店 - 管理後台</title>
+	<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;700&display=swap" rel="stylesheet">
+	<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"> 
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-panel { max-width: 800px; margin: 20px auto; display: flex; height: 80px; }
+        #admin-chat-box { width: 100%; border: 2px solid var(--primary-color); height: 500px; display: flex; flex-direction: column; }
+    </style>
+</head>
+<body>
+    <h1>店家回覆系統</h1>
+    <div id="admin-chat-box">
+        <div id="chat-messages" class="chat-messages"></div>
+        <div class="chat-input-area">
+            <input type="text" id="admin-input" placeholder="請輸入回覆...">
+            <button onclick="adminSend()">回覆客人</button>
+        </div>
+    </div>
+
+    <script src="data.js"></script>
+    <script src="components.js"></script> 
+	<script src="/socket.io/socket.io.js"></script>
+	<script src="main.js"></script>
+    <script>
+        const socket = io();
+
+        // 告訴後端，我是老闆
+        socket.emit('identify admin');
+
+        function adminSend() {
+            const input = document.getElementById('admin-input');
+            if (!input.value.trim()) return;
+            // 發送時標記這是來源於 admin
+            socket.emit('admin message', input.value);
+            input.value = '';
+        }
+
+        socket.on('chat message', (data) => {
+            const msgArea = document.getElementById('chat-messages');
+            const label = data.isAdmin ? '[我]' : '[客人]';
+            msgArea.innerHTML += `<div><b>${label}:</b> ${data.text}</div>`;
+            msgArea.scrollTop = msgArea.scrollHeight;
+        });
+    </script>
+</body>
+</html>
