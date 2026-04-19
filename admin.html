@@ -13,22 +13,41 @@
         .customer-item { padding: 15px; border-bottom: 1px solid #eee; cursor: pointer; transition: 0.2s; }
         .customer-item:hover { background: #f4f1ea; }
         .customer-item.active { background: #e2d5c5; border-left: 5px solid #8b4513; }
-        .main-chat { flex: 1; display: flex; flex-direction: column; }
+        
+		.main-chat { flex: 1; display: flex; flex-direction: column; }
         #admin-messages { flex: 1; padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .admin-input-box { padding: 20px; background: white; border-top: 1px solid #eee; display: flex; gap: 10px; }
         .admin-input-box input { flex: 1; padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
-    </style>
+    
+		/* 登出按鈕放在右上角 */
+        .logout-btn { 
+            position: absolute; 
+            right: 20px; 
+            top: 15px; 
+            text-decoration: none; 
+            color: #8b4513; 
+            font-weight: bold;
+            border: 1px solid #8b4513;
+            padding: 5px 15px;
+            border-radius: 20px;
+            transition: 0.3s;
+        }
+        .logout-btn:hover { background: #8b4513; color: white; }
+	</style>
 
 </head>
 
 <body>
     <nav style="background: white; padding: 0 5%; display: flex; align-items: center; height: 70px; box-shadow: 0 2px 5px rgba(0,0,0,0.1);">
         <div class="logo"><i class="fa-solid fa-hippo"></i> 古董店管理後台</div>
+		<a href="/api/logout" class="logout-btn">
+        	<i class="fa-solid fa-right-from-bracket"></i> 登出
+    	</a>
     </nav>
 
     <div class="admin-layout">
         <div class="sidebar" id="customer-list">
-            <div style="padding: 15px; font-weight: bold; color: #8b4513;">對話列表</div>
+            <div id="list-title" style="padding: 15px; font-weight: bold; color: #8b4513;">對話列表</div>
         </div>
         <div class="main-chat">
             <div id="admin-messages"></div>
@@ -47,14 +66,25 @@
         let currentCustomerId = null;
         const allMessages = {}; // 存儲各別客人的訊息紀錄
 
+		socket.emit('admin join');
+
+		socket.on('load history', (history) => {
+			console.log("載入歷史紀錄", history);
+    		Object.assign(allMessages, history);
+    		const list = document.getElementById('customer-list');
+            list.innerHTML = '<div id="list-title" style="padding: 15px; font-weight: bold; color: #8b4513; border-bottom: 1px solid #eee;">對話列表</div>';
+			
+			for (const id in history) {
+        		const lastMsg = history[id][history[id].length - 1].text;
+                addUserTab(id, lastMsg);
+    		}
+		});
+
 		socket.on('new customer message', (data) => {
     		const id = data.customerId;
     
     		// 如果是新客人，初始化他的訊息陣列
-    		if (!allMessages[id]) {
-       			allMessages[id] = [];
-       			addUserTab(id, data.text);
-    		}
+    		if (!allMessages[id]) allMessages[id] = [];
 
     		// 存入訊息紀錄
     		allMessages[id].push({
@@ -62,6 +92,8 @@
         		isAdmin: false,
         		time: data.time
     		});
+
+			addUserTab(id, data.text);
 
 			// 側邊欄預覽文字
         	const preview = document.getElementById(`last-${id}`);
@@ -87,9 +119,17 @@
 
 		function addUserTab(id, initialText) {
         	const list = document.getElementById('customer-list'); // 確保 ID 與 HTML 對應
+			const title = document.getElementById('list-title');
+
+			// 如果標籤已存在，先移除（為了重新排到最上面）
+    		const existingTab = document.getElementById('tab-' + id);
+    		if (existingTab) existingTab.remove();
+
         	const div = document.createElement('div');
         	div.className = 'customer-item';
         	div.id = 'tab-' + id;
+			if (id === currentCustomerId) div.classList.add('active'); // 保持高亮
+
         	div.innerHTML = `
 				<div style="position: relative;">
             		<strong>訪客 ${id.substring(0, 5)}</strong>
@@ -99,7 +139,13 @@
 				</div>
 			`;
         	div.onclick = () => switchUser(id);
-        	list.appendChild(div);
+
+			if (title) {
+                list.insertBefore(div, title.nextSibling);
+            } else {
+                // 萬一找不到標題，才用 prepend 放在最前面
+                list.prepend(div);
+            }
     	}
 
 		function switchUser(id) {
