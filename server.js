@@ -97,6 +97,33 @@ app.post('/api/login', async (req, res) => {
     }
 });
 
+app.post('/api/register', async (req, res) => {
+    const { username, password } = req.body;
+
+    if (!username || !password) {
+        return res.json({ success: false, message: '請輸入帳號與密碼' });
+    }
+
+    try {
+        // 檢查帳號是否重複
+        const checkUser = await pool.query('SELECT * FROM users WHERE username = $1', [username]);
+        if (checkUser.rows.length > 0) {
+            return res.json({ success: false, message: '此帳號已被註冊' });
+        }
+
+        // 存入新用戶 (role 預設為 customer)
+        const newUser = await pool.query(
+            'INSERT INTO users (username, password, role) VALUES ($1, $2, $3) RETURNING id',
+            [username, password, 'customer']
+        );
+
+        res.json({ success: true, message: '註冊成功！' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: '伺服器錯誤' });
+    }
+});
+
 // 讓後端可以讀取你原本的前端檔案 (HTML, CSS, JS)
 app.use(express.static(path.join(__dirname, '/')));
 
@@ -153,7 +180,15 @@ io.on('connection', (socket) => {
 
 io.on('connection', (socket) => {
     
-    // 當老闆登入時，從資料庫撈取所有歷史紀錄
+    // 前端登入成功後，會發送這個事件告知它是哪位用戶
+    socket.on('user identify', (userId) => {
+        socket.userId = userId; 
+        console.log(`User Identified: ${userId} is connected to socket ${socket.id}`);
+        // 可以加入一個專屬房間，方便之後針對特定用戶推送訊息
+        socket.join(`user-room-${userId}`);
+    });
+	
+	// 當老闆登入時，從資料庫撈取所有歷史紀錄
     socket.on('admin join', async () => {
         try {
             const res = await pool.query('SELECT * FROM chat_messages ORDER BY created_at ASC');
@@ -176,7 +211,8 @@ io.on('connection', (socket) => {
 
     // 當訪客傳訊息時
     socket.on('chat message', async (msg) => {
-        const messageData = {
+        const userId = socket.userId || null;
+		const messageData = {
             text: msg,
             isAdmin: false,
             time: new Date().toLocaleTimeString()
@@ -185,12 +221,17 @@ io.on('connection', (socket) => {
         try {
             // 2. 存入 PostgreSQL
             await pool.query(
-                'INSERT INTO chat_messages (customer_id, text, is_admin) VALUES ($1, $2, $3)',
-                [socket.id, msg, false]
+                'INSERT INTO chat_messages (customer_id, text, is_admin, user_id) VALUES ($1, $2, $3, $4)',
+                [socket.id, msg, false, userId]
             );
 
             socket.emit('chat message', messageData);
-            io.emit('new customer message', { customerId: socket.id, ...messageData });
+			
+            io.emit('new customer message', { 
+                customerId: userId ? `User_${userId}` : socket.id, 
+                ...messageData 
+            });
+			
         } catch (err) {
             console.error('儲存訊息失敗', err);
         }
@@ -206,13 +247,25 @@ io.on('connection', (socket) => {
         };
 
         try {
-            // 3. 存入 PostgreSQL
+			let dbUserId = null;
+            let dbSocketId = targetId;
+			
+			// 判斷 targetId 是不是我們自定義的 User_ID 格式
+            if (targetId.startsWith('User_')) {
+                dbUserId = targetId.split('_')[1];
+                // 如果是 User_ID，我們發送到該用戶的專屬房間
+                io.to(`user-room-${dbUserId}`).emit('chat message', messageData);
+            } else {
+                // 如果是原始 SocketID，直接發送
+                io.to(targetId).emit('chat message', messageData);
+            }
+			
+            // 存入 PostgreSQL
             await pool.query(
-                'INSERT INTO chat_messages (customer_id, text, is_admin) VALUES ($1, $2, $3)',
-                [targetId, text, true]
+                'INSERT INTO chat_messages (customer_id, text, is_admin, user_id) VALUES ($1, $2, $3, $4)',
+                [dbSocketId, text, true, dbUserId]
             );
 
-            io.to(targetId).emit('chat message', messageData);
         } catch (err) {
             console.error('老闆訊息儲存失敗', err);
         }

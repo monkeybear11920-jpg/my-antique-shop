@@ -8,6 +8,12 @@ function saveCart() {
     localStorage.setItem('my_cart', JSON.stringify(cart));
 }
 
+const userData = JSON.parse(localStorage.getItem('user'));
+if (userData && userData.userId) {
+    // 如果有登入資料，主動告知 Socket 伺服器我是誰
+    socket.emit('user identify', userData.userId);
+}
+
 /**
  * 頁面載入：動態渲染商品卡片
  */

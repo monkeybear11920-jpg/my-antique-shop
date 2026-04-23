@@ -3,7 +3,29 @@ const components = {
     renderNavbar() {
         const header = document.getElementById('common-header');
         if (!header) return;
-
+		
+		// 從 localStorage 檢查是否有登入資訊 (這是在登入成功後存進去的)
+		const userData = JSON.parse(localStorage.getItem('user'));
+		
+		let authHtml = '';
+        if (userData) {
+            // 已登入狀態
+            authHtml = `
+                <div class="auth-group">
+                    <span class="user-name"><i class="fa-solid fa-user"></i> ${userData.username}</span>
+                    <button onclick="handleLogout()" class="auth-btn logout">登出</button>
+                </div>
+            `;
+        } else {
+            // 未登入狀態
+            authHtml = `
+                <div class="auth-group">
+                    <button onclick="location.href='login.html'" class="auth-btn">登入</button>
+                    <button onclick="location.href='register.html'" class="auth-btn register">註冊</button>
+                </div>
+            `;
+        }
+		
         header.innerHTML = `
         <nav>
             <div class="logo" onclick="location.href='index.html'" style="cursor:pointer;">
@@ -16,6 +38,8 @@ const components = {
 					<i class="fa-solid fa-magnifying-glass"></i>
 				</div>
 			</div>
+			
+			${authHtml}
 			
             <div class="cart-status" onclick="showCheckout()">
                 <i class="fa-solid fa-cart-shopping"></i> 購物車(<span id="cart-count">0</span>)
@@ -121,3 +145,8 @@ const components = {
         `;
     }
 };
+
+function handleLogout() {
+    localStorage.removeItem('user');
+    location.href = '/api/logout'; // 呼叫後端清除 session 並導向
+}

@@ -39,11 +39,20 @@
             });
             
             const result = await res.json();
-            if (result.success) {
-                window.location.href = '/admin'; // 登入成功跳轉到後台
-            } else {
-                document.getElementById('msg').innerText = result.message;
-            }
+			if (result.success) {
+				// 存入 localStorage (包含 username 和 userId)
+				localStorage.setItem('user', JSON.stringify({
+					username: user,
+					userId: result.userId // 確保後端 API 有回傳這個
+				}));
+				
+				// 如果是 admin 就去後台，否則回首頁
+				if (user === 'admin') {
+					window.location.href = '/admin';
+				} else {
+					window.location.href = 'index.html';
+				}
+			}
         }
     </script>
 </body>
